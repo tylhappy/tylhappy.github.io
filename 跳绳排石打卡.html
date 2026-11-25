@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="跳绳打卡">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2563eb">
+<title>跳绳排石打卡</title>
+<style>
+:root{
+  --bg:#eef3f9; --panel:#ffffff; --ink:#0f172a; --muted:#64748b;
+  --line:#e2e8f0; --brand:#2563eb; --brand2:#0ea5e9;
+  --ok:#16a34a; --warn:#f59e0b; --bad:#dc2626; --soft:#f1f5f9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;
+  -webkit-user-select:none;user-select:none;
+}
+.app{max-width:520px;margin:0 auto;min-height:100vh;padding:16px 14px 104px}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;padding:8px 4px 14px}
+.hd h1{font-size:22px;margin:0;font-weight:800;letter-spacing:.5px}
+.hd .date{font-size:12px;color:var(--muted);text-align:right;line-height:1.35}
+.card{background:var(--panel);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 3px 14px rgba(15,23,42,.06)}
+.card h2{font-size:16px;margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--brand2)}
+.sub{font-size:12px;color:var(--muted)}
+.btn{border:0;border-radius:14px;min-height:52px;padding:0 18px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .08s,opacity .15s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.25)}
+.btn-lg{width:100%;min-height:62px;font-size:19px;border-radius:18px}
+.btn-ghost{background:var(--soft);color:var(--ink)}
+.btn-danger{background:#fff1f2;color:var(--bad);border:1px solid #fecdd3}
+.btn-sm{min-height:40px;font-size:13px;border-radius:11px;padding:0 12px}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.step{display:flex;gap:11px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:0}
+.step .n{flex:0 0 28px;height:28px;border-radius:9px;background:#e8f0ff;color:var(--brand);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.step .t{flex:1}
+.step .t b{font-size:14px}
+.step .t div{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.toggle:last-child{border-bottom:0}
+.toggle .lb{font-size:14px;font-weight:600}
+.toggle .lb small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:2px}
+.sw{width:50px;height:29px;border-radius:20px;background:#cbd5e1;position:relative;flex:0 0 50px;transition:background .2s;cursor:pointer}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:23px;height:23px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw.on{background:var(--brand)}
+.sw.on::after{left:24px}
+.stat{display:flex;gap:8px;margin-bottom:12px}
+.stat .box{flex:1;background:var(--soft);border-radius:13px;padding:10px;text-align:center}
+.stat .box b{display:block;font-size:21px;line-height:1.2}
+.stat .box span{font-size:11px;color:var(--muted)}
+.bar{height:12px;background:var(--soft);border-radius:10px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand));border-radius:10px;transition:width .3s}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:50}
+.tabbar button{flex:1;border:0;background:none;font-family:inherit;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer}
+.tabbar button .ic{font-size:20px;line-height:1}
+.tabbar button.act{color:var(--brand);font-weight:800}
+.page{display:none}
+.page.show{display:block}
+/* 运动全屏 */
+#workout{position:fixed;inset:0;background:linear-gradient(165deg,#f8fbff 0%,#eaf2ff 100%);z-index:100;display:none;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom))}
+#workout.show{display:flex}
+.wtop{display:flex;justify-content:space-between;align-items:center}
+.wtop .stageName{font-size:15px;font-weight:800;color:var(--brand)}
+.iconbtn{border:0;background:#fff;width:40px;height:40px;border-radius:12px;font-size:17px;color:var(--ink);box-shadow:0 2px 8px rgba(15,23,42,.08);cursor:pointer}
+.wbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:0}
+.bignum{font-size:76px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-2px}
+.biglabel{font-size:14px;color:var(--muted);margin-top:10px}
+.beat{width:132px;height:132px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#60a5fa,#2563eb);box-shadow:0 10px 30px rgba(37,99,235,.32);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800;transition:transform .09s ease-out;margin-bottom:22px}
+.beat.pulse{transform:scale(1.14);box-shadow:0 12px 38px rgba(37,99,235,.5)}
+.dots{display:flex;gap:7px;margin-top:20px}
+.dots i{width:11px;height:11px;border-radius:50%;background:#cbd5e1}
+.dots i.done{background:var(--ok)}
+.dots i.now{background:var(--brand);transform:scale(1.3)}
+.tip{margin-top:22px;font-size:12px;color:var(--muted);max-width:300px;line-height:1.7}
+.wfoot{display:flex;gap:10px}
+.wfoot .btn{flex:1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal.show{display:flex}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:22px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 14px;font-size:18px;text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0 16px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:9px 14px;font-size:13px;font-family:inherit;cursor:pointer;color:var(--ink)}
+.chip.on{background:#e8f0ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+textarea,input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:74px;resize:vertical}
+label.fld{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
+.logitem{border-bottom:1px solid var(--line);padding:11px 2px}
+.logitem:last-child{border-bottom:0}
+.logitem .l1{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.logitem .l2{font-size:12px;color:var(--muted);margin-top:3px}
+.tag{display:inline-block;background:#fff7ed;color:#c2410c;border-radius:6px;padding:1px 6px;font-size:11px;margin-right:4px}
+.tag.bad{background:#fef2f2;color:var(--bad)}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:26px 0}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:13px;padding:11px 13px;font-size:12px;color:#92400e;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:rgba(15,23,42,.9);color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1}
+.kv{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv input[type=number]{width:78px;text-align:center;padding:7px}
+.kv select{width:100px;padding:7px}
+.warnbar{display:none;background:#fef2f2;color:var(--bad);border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:12px;border:1px solid #fecaca}
+.warnbar.show{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hd">
+    <h1>跳绳排石打卡</h1>
+    <div class="date" id="todayDate"></div>
+  </div>
+
+  <!-- 今日 -->
+  <section class="page show" id="page-today">
+    <div class="stat">
+      <div class="box"><b id="sStreak">0</b><span>连续打卡（天）</span></div>
+      <div class="box"><b id="sTotal">0</b><span>累计次数</span></div>
+      <div class="box"><b id="sWater">0</b><span>今日饮水 ml</span></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>今日计划</h2>
+      <div class="sub" id="planSummary"></div>
+      <div style="height:10px"></div>
+      <div class="step"><div class="n">1</div><div class="t"><b>准备</b><div>饭后至少 1.5 小时；跳前温水 300–400ml，等 10 分钟</div></div></div>
+      <div class="step" id="stepPosture"><div class="n">2</div><div class="t"><b>膝胸卧位（肾下盏必做）</b><div>垫高臀部 5–10 分钟，帮助结石翻到肾盂</div></div></div>
+      <div class="step"><div class="n">3</div><div class="t"><b>热身 3 分钟</b><div>原地踏步、转腰、活动脚踝膝盖</div></div></div>
+      <div class="step"><div class="n">4</div><div class="t"><b>分组跳绳</b><div id="jumpDesc"></div></div></div>
+      <div class="step"><div class="n">5</div><div class="t"><b>收尾慢走 3–5 分钟</b><div>不要马上坐下或躺下</div></div></div>
+      <div style="height:14px"></div>
+      <button class="btn btn-primary btn-lg" id="btnStart">开始今日运动</button>
+      <div class="sub" style="text-align:center;margin-top:9px" id="doneHint"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>模式</h2>
+      <div class="toggle"><div class="lb">肾下盏模式<small>先做 5–10 分钟膝胸卧位再跳</small></div><div class="sw" id="swLower"></div></div>
+      <div class="toggle"><div class="lb">进阶模式<small id="advHint">连续打卡 7 天后解锁（5 组 × 80 下）</small></div><div class="sw" id="swAdv"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="note">
+        <b>安全底线</b>：跳时腰酸胀或疼，立刻停止，不要硬撑。留意小便——少量细沙/浑浊可记录观察；出现<b>鲜红血尿</b>请暂停运动并复诊。一天上限 500 下，不是越多越好。
+      </div>
+    </div>
+  </section>
+
+  <!-- 记录 -->
+  <section class="page" id="page-log">
+    <div class="card">
+      <h2><span class="dot"></span>打卡记录</h2>
+      <div class="stat">
+        <div class="box"><b id="logCount">0</b><span>打卡次数</span></div>
+        <div class="box"><b id="logDays">0</b><span>本月天数</span></div>
+        <div class="box"><b id="logMax">0</b><span>单次最高</span></div>
+      </div>
+      <div id="logList"></div>
+      <div style="height:12px"></div>
+      <button class="btn btn-ghost btn-sm" id="btnExport">导出数据备份</button>
+    </div>
+  </section>
+
+  <!-- 饮水 -->
+  <section class="page" id="page-water">
+    <div class="card">
+      <h2><span class="dot"></span>今日饮水</h2>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+        <div><span style="font-size:32px;font-weight:800" id="waterNum">0</span><span class="sub"> / 2000 ml</span></div>
+        <div class="sub" id="waterPct">0%</div>
+      </div>
+      <div class="bar"><i id="waterBar" style="width:0%"></i></div>
+      <div class="sub" style="margin-top:9px">少量多次，不要猛灌。</div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>快速记录</h2>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn btn-ghost" data-water="300">+300 ml 温水</button>
+        <button class="btn btn-ghost" data-water="400">+400 ml</button>
+        <button class="btn btn-ghost" data-water="250">+250 ml</button>
+      </div>
+      <div class="row">
+        <input type="number" id="waterCustom" placeholder="自定义 ml" min="1" max="2000" inputmode="numeric">
+        <button class="btn btn-primary" id="btnWaterAdd" style="flex:0 0 100px">添加</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <button class="btn btn-ghost btn-sm" id="btnWater10">跳前温水 10 分钟计时</button>
+        <button class="btn btn-ghost btn-sm" id="btnWaterUndo">撤销上次</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="note">饭后间隔至少 1.5 小时再跳；白天优先，不建议睡前猛跳。</div>
+    </div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="page" id="page-set">
+    <div class="card">
+      <h2><span class="dot"></span>运动参数</h2>
+      <div class="kv"><span>每组次数</span><input type="number" id="cfgPer" min="10" max="100" step="10"></div>
+      <div class="kv"><span>组数</span><input type="number" id="cfgSets" min="1" max="10"></div>
+      <div class="kv"><span>组间休息（秒）</span><input type="number" id="cfgRest" min="10" max="180"></div>
+      <div class="kv"><span>节拍速度（下/分钟）</span><input type="number" id="cfgBpm" min="60" max="180" step="10"></div>
+      <div class="kv"><span>热身（秒）</span><input type="number" id="cfgWarm" min="30" max="600"></div>
+      <div class="kv"><span>慢走（秒）</span><input type="number" id="cfgCool" min="60" max="900"></div>
+      <div class="kv"><span>膝胸卧位（分钟）</span><input type="number" id="cfgPosture" min="3" max="15"></div>
+      <div class="sub" style="margin-top:10px">节拍 120 下/分钟 = 每秒 2 下，60 下约 30 秒。</div>
+      <button class="btn btn-primary" id="btnSaveCfg" style="margin-top:12px;width:100%">保存参数</button>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>反馈与数据</h2>
+      <div class="toggle"><div class="lb">节拍提示音</div><div class="sw" id="swSound"></div></div>
+      <div class="toggle"><div class="lb">震动提醒</div><div class="sw" id="swVib"></div></div>
+      <div class="toggle"><div class="lb">屏幕常亮<small>运动期间防止息屏</small></div><div class="sw" id="swWake"></div></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-ghost btn-sm" id="btnImport">导入备份</button>
+        <button class="btn btn-danger btn-sm" id="btnClear">清空全部数据</button>
+      </div>
+      <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+    </div>
+    <div class="card"><div class="sub">仅供运动打卡辅助，不替代医生建议。数据保存在本机浏览器，清理浏览器数据会丢失，请定期导出备份。</div></div>
+  </section>
+</div>
+
+<div class="tabbar">
+  <button class="act" data-page="today"><span class="ic">◎</span>今日</button>
+  <button data-page="log"><span class="ic">▤</span>记录</button>
+  <button data-page="water"><span class="ic">◒</span>饮水</button>
+  <button data-page="set"><span class="ic">⚙</span>设置</button>
+</div>
+
+<!-- 运动全屏 -->
+<div id="workout">
+  <div class="wtop">
+    <div class="stageName" id="wStageName">准备</div>
+    <div class="row" style="flex:0 0 auto;gap:8px">
+      <button class="iconbtn" id="wPause" title="暂停">⏸</button>
+      <button class="iconbtn" id="wExit" title="退出">✕</button>
+    </div>
+  </div>
+  <div class="wbody">
+    <div id="wPrep" style="display:none;width:100%">
+      <div class="bignum" id="wPrepNum">10:00</div>
+      <div class="biglabel" id="wPrepLabel">喝完温水，等 10 分钟</div>
+      <div class="tip">300–400ml 温水，一次性喝完；少量多次冲尿，不要猛灌。</div>
+    </div>
+    <div id="wTimer" style="display:none;width:100%">
+      <div class="bignum" id="wTimerNum">03:00</div>
+      <div class="biglabel" id="wTimerLabel">热身</div>
+      <div class="tip" id="wTimerTip">原地踏步、转腰、活动脚踝膝盖</div>
+    </div>
+    <div id="wJump" style="display:none;width:100%">
+      <div class="beat" id="wBeat"><span id="wBeatNum">0</span></div>
+      <div class="biglabel" id="wJumpLabel">第 1 / 5 组 · 目标 60 下</div>
+      <div class="dots" id="wDots"></div>
+      <div class="tip">前脚掌轻落地、膝盖微弯缓冲，别砸脚后跟。腰酸或疼立即停止。</div>
+    </div>
+    <div id="wRest" style="display:none;width:100%">
+      <div class="bignum" id="wRestNum">0:40</div>
+      <div class="biglabel">组间休息 · 喘匀气再继续</div>
+      <div class="tip">休息 40 秒，别坐下躺下；慢走几步更好。</div>
+    </div>
+  </div>
+  <div class="wfoot" id="wFoot"></div>
+</div>
+
+<!-- 弹层 -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3 id="mTitle">提示</h3>
+    <div id="mBody"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn btn-ghost" id="mCancel">取消</button>
+      <button class="btn btn-primary" id="mOk">确定</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='jump_stone_v1';
+var DEF={per:60,sets:5,rest:40,bpm:120,warm:180,cool:300,posture:5,sound:true,vibrate:true,wake:true,lower:false,adv:false,advManual:false};
+var S={cfg:{},logs:[],water:{},waterLog:{}};
+var today=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var $=function(id){return document.getElementById(id);};
+
+function load(){
+  try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);S.cfg=Object.assign({},DEF,o.cfg||{});S.logs=o.logs||[];S.water=o.water||{};S.waterLog=o.waterLog||{};return;}}catch(e){}
+  S.cfg=Object.assign({},DEF);
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('本地存储失败');}}
+function fmt(s){s=Math.max(0,Math.round(s));var m=Math.floor(s/60),x=s%60;return m+':'+String(x).padStart(2,'0');}
+function toast(t){var el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){el.classList.remove('show');},2200);}
+function beep(freq,dur,vol){
+  if(!S.cfg.sound)return;
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!beep.ctx)beep.ctx=new AC();
+    var c=beep.ctx,o=c.createOscillator(),g=c.createGain();
+    if(c.state==='suspended')c.resume();
+    o.type='sine';o.frequency.value=freq||880;
+    g.gain.setValueAtTime(vol||0.10,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+(dur||0.06));
+    o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+(dur||0.06));
+  }catch(e){}
+}
+function chime(){beep(660,.10,.14);setTimeout(function(){beep(880,.10,.14);},120);setTimeout(function(){beep(1100,.18,.14);},250);}
+function vib(p){if(S.cfg.vibrate&&navigator.vibrate){try{navigator.vibrate(p);}catch(e){}}}
+
+/* ---------- 数据派生 ---------- */
+function perSet(){return S.cfg.adv?Math.min(80,S.cfg.per+20):S.cfg.per;}
+function todayLog(){return S.logs.filter(function(l){return l.date===today();});}
+function streak(){
+  var set={};S.logs.forEach(function(l){if(l.done!==false)set[l.date]=1;});
+  var d=new Date(),n=0;
+  if(!set[today()])d.setDate(d.getDate()-1);
+  while(true){var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(!set[k])break;n++;d.setDate(d.getDate()-1);}
+  return n;
+}
+function unlocked(){return streak()>=7||S.cfg.advManual;}
+
+/* ---------- 页面渲染 ---------- */
+function render(){
+  var d=new Date(),wk=['日','一','二','三','四','五','六'][d.getDay()];
+  $('todayDate').innerHTML=(d.getMonth()+1)+'月'+d.getDate()+'日 周'+wk+'<br>数据存于本机';
+  $('sStreak').textContent=streak();
+  var total=S.logs.reduce(function(a,l){return a+(l.total||0);},0);
+  $('sTotal').textContent=total;
+  $('sWater').textContent=S.water[today()]||0;
+  var p=perSet(),sets=S.cfg.sets;
+  $('planSummary').textContent='热身3分钟 → '+sets+'组 × '+p+'下（组间'+S.cfg.rest+'秒）→ 慢走3–5分钟';
+  $('jumpDesc').textContent=sets+'组 × '+p+'下，组间休息'+S.cfg.rest+'秒，合计 '+sets*p+' 下（上限500）';
+  $('stepPosture').style.opacity=S.cfg.lower?'1':'.5';
+  $('swLower').className='sw'+(S.cfg.lower?' on':'');
+  $('swAdv').className='sw'+(S.cfg.adv?' on':'');
+  var un=unlocked();
+  $('swAdv').style.opacity=un?'1':'.5';
+  $('advHint').textContent=un?(S.cfg.adv?'当前：5组×80下（已完成 '+sets*p+' 下）':'已解锁，可切换 5组×80下'):'连续打卡7天后解锁（5组×80下）';
+  var done=todayLog().filter(function(l){return l.done!==false;}).length;
+  $('doneHint').textContent=done?('今日已完成 '+done+' 轮，再跳请量力而行'):'今天还没打卡';
+  renderLog();renderWater();
+}
+function renderLog(){
+  var box=$('logList');
+  if(!S.logs.length){box.innerHTML='<div class="empty">还没有记录，完成一轮运动后自动打卡</div>';}
+  else{
+    box.innerHTML=S.logs.slice().sort(function(a,b){return b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0);}).slice(0,40).map(function(l){
+      var tags=(l.tags||[]).map(function(t){return '<span class="tag'+(t==='血尿'?' bad':'')+'">'+t+'</span>';}).join('');
+      return '<div class="logitem"><div class="l1"><span>'+l.date+'　'+(l.done===false?'中途停止':'完成')+'</span><span>'+l.total+' 下</span></div>'+
+        '<div class="l2">'+l.sets+'组×'+l.perSet+'下 · '+(l.adv?'进阶':'常规')+(l.lower?' · 肾下盏':'')+(tags?' · '+tags:'')+(l.note?' · '+l.note:'')+'</div></div>';
+    }).join('');
+  }
+  $('logCount').textContent=S.logs.length;
+  var m=today().slice(0,7);
+  $('logDays').textContent=S.logs.filter(function(l){return l.date.indexOf(m)===0;}).length;
+  $('logMax').textContent=S.logs.reduce(function(a,l){return Math.max(a,l.total||0);},0);
+}
+function renderWater(){
+  var n=S.water[today()]||0;
+  $('waterNum').textContent=n;
+  $('waterPct').textContent=Math.round(n/2000*100)+'%';
+  $('waterBar').style.width=Math.min(100,n/2000*100)+'%';
+}
+
+/* ---------- Tab ---------- */
+document.querySelectorAll('.tabbar button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.tabbar button').forEach(function(x){x.classList.remove('act');});
+    b.classList.add('act');
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('show');});
+    $('page-'+b.dataset.page).classList.add('show');
+  };
+});
+
+/* ---------- 开关 ---------- */
+function bindSw(id,key,after){
+  $(id).onclick=function(){S.cfg[key]=!S.cfg[key];save();$(id).className='sw'+(S.cfg[key]?' on':'');if(after)after();render();};
+}
+bindSw('swLower','lower');
+$('swAdv').onclick=function(){
+  if(!unlocked()){toast('连续打卡7天后解锁，或在设置中确认已适应');return;}
+  S.cfg.adv=!S.cfg.adv;save();render();toast(S.cfg.adv?'进阶模式：5组×80下':'已切回常规模式');
+};
+bindSw('swSound','sound');
+bindSw('swVib','vibrate');
+bindSw('swWake','wake');
+
+/* ---------- 设置 ---------- */
+function fillCfg(){
+  $('cfgPer').value=S.cfg.per;$('cfgSets').value=S.cfg.sets;$('cfgRest').value=S.cfg.rest;
+  $('cfgBpm').value=S.cfg.bpm;$('cfgWarm').value=S.cfg.warm;$('cfgCool').value=S.cfg.cool;$('cfgPosture').value=S.cfg.posture;
+  $('swSound').className='sw'+(S.cfg.sound?' on':'');
+  $('swVib').className='sw'+(S.cfg.vibrate?' on':'');
+  $('swWake').className='sw'+(S.cfg.wake?' on':'');
+}
+$('btnSaveCfg').onclick=function(){
+  var g=function(id,def,min,max){var v=parseInt($(id).value,10);if(isNaN(v))v=def;return Math.min(max,Math.max(min,v));};
+  S.cfg.per=g('cfgPer',60,10,100);S.cfg.sets=g('cfgSets',5,1,10);S.cfg.rest=g('cfgRest',40,10,180);
+  S.cfg.bpm=g('cfgBpm',120,60,180);S.cfg.warm=g('cfgWarm',180,30,600);S.cfg.cool=g('cfgCool',300,60,900);
+  S.cfg.posture=g('cfgPosture',5,3,15);
+  save();render();toast('参数已保存');
+};
+$('btnExport').onclick=function(){
+  var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='跳绳打卡备份-'+today()+'.json';a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},3000);toast('备份已下载');
+};
+$('btnImport').onclick=function(){$('fileInput').click();};
+$('fileInput').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(){
+    try{var o=JSON.parse(r.result);if(!o.cfg||!o.logs)throw 0;
+      S.cfg=Object.assign({},DEF,o.cfg);S.logs=o.logs||[];S.water=o.water||{};S.waterLog=o.waterLog||{};
+      save();fillCfg();render();toast('导入成功');
+    }catch(err){toast('文件格式不对');}
+  };r.readAsText(f);e.target.value='';
+};
+$('btnClear').onclick=function(){
+  modal('确认清空','将删除全部打卡记录和饮水数据，无法恢复。建议先导出备份。',function(){
+    S.logs=[];S.water={};S.waterLog={};S.cfg=Object.assign({},DEF);save();fillCfg();render();toast('已清空');
+  });
+};
+
+/* ---------- 饮水 ---------- */
+function addWater(n){
+  if(!n||n<=0)return;
+  S.water[today()]=(S.water[today()]||0)+n;
+  if(!S.waterLog[today()])S.waterLog[today()]=[];
+  S.waterLog[today()].push({ml:n,t:new Date().toTimeString().slice(0,5)});
+  save();renderWater();$('sWater').textContent=S.water[today()];toast('已记录 '+n+' ml');
+}
+document.querySelectorAll('[data-water]').forEach(function(b){b.onclick=function(){addWater(parseInt(b.dataset.water,10));};});
+$('btnWaterAdd').onclick=function(){addWater(parseInt($('waterCustom').value,10));$('waterCustom').value='';};
+$('btnWaterUndo').onclick=function(){
+  var arr=S.waterLog[today()]||[];if(!arr.length){toast('今天没有记录');return;}
+  var last=arr.pop();S.water[today()]=Math.max(0,(S.water[today()]||0)-last.ml);save();renderWater();$('sWater').textContent=S.water[today()];toast('已撤销 '+last.ml+' ml');
+};
+$('btnWater10').onclick=function(){modal('跳前温水计时','先确认已喝完 300–400ml 温水，然后开始 10 分钟等待。',function(){
+  W.active=true;W.paused=false;
+  $('workout').classList.add('show');
+  $('wStageName').textContent='准备';
+  requestWake();
+  startCountdown(600,'等待 10 分钟','帮助冲刷，不要马上开跳',function(){
+    clearTimers();releaseWake();$('workout').classList.remove('show');W.active=false;
+    chime();toast('10分钟到了，可以开始运动了');
+  });
+});};
+
+/* ---------- 弹层 ---------- */
+var mCb=null;
+function modal(title,html,cb,okText){
+  $('mTitle').textContent=title;$('mBody').innerHTML=html;mCb=cb;
+  $('mOk').textContent=okText||'确定';$('modal').classList.add('show');
+}
+$('mCancel').onclick=function(){$('modal').classList.remove('show');mCb=null;};
+$('mOk').onclick=function(){$('modal').classList.remove('show');var f=mCb;mCb=null;if(f)f();};
+
+/* ---------- 运动流程 ---------- */
+var W={active:false,stage:'',paused:false,timer:null,beat:null,left:0,set:0,beatN:0,total:0,stopped:false,wake:null};
+var stageName={prep:'准备',posture:'膝胸卧位',warm:'热身',jump:'跳绳',rest:'休息',cool:'慢走',done:'完成'};
+
+function requestWake(){
+  if(!S.cfg.wake||!navigator.wakeLock)return;
+  try{navigator.wakeLock.request('screen').then(function(l){W.wake=l;}).catch(function(){});}catch(e){}
+}
+function releaseWake(){try{if(W.wake)W.wake.release();}catch(e){}W.wake=null;}
+function clearTimers(){if(W.timer){clearInterval(W.timer);W.timer=null;}if(W.beat){clearInterval(W.beat);W.beat=null;}}
+function showPart(id){
+  ['wPrep','wTimer','wJump','wRest'].forEach(function(x){$(x).style.display=(x===id?'block':'none');});
+}
+function setFoot(html){$('wFoot').innerHTML=html;}
+function bindFoot(){
+  var b=$('wNext');if(b)b.onclick=nextStage;
+  var s=$('wSkip');if(s)s.onclick=nextStage;
+  var p=$('wPauseFoot');if(p)p.onclick=togglePause;
+  var q=$('wStop');if(q)q.onclick=function(){
+    modal('停止运动','出现腰酸胀、疼痛或明显不适时应立即停止。确认结束本次运动？',function(){W.stopped=true;finish(true);},'确认停止');
+  };
+}
+
+function startCountdown(sec,label,tip,next){
+  showPart('wTimer');$('wTimerNum').textContent=fmt(sec);$('wTimerLabel').textContent=label;$('wTimerTip').textContent=tip||'';
+  W.left=sec;W.stage=label;W.paused=false;$('wPause').textContent='⏸';
+  setFoot('<button class="btn btn-ghost" id="wSkip">跳过</button><button class="btn btn-primary" id="wNext">完成，继续</button>');bindFoot();
+  clearTimers();W.timer=setInterval(function(){
+    if(W.paused)return;
+    W.left--;$('wTimerNum').textContent=fmt(W.left);
+    if(W.left<=0){clearTimers();chime();vib([100,80,100]);if(next)next();else toBeat();}
+  },1000);
+}
+function startBeat(){
+  showPart('wJump');W.stage='jump';W.paused=false;$('wPause').textContent='⏸';
+  $('wJumpLabel').textContent='第 '+(W.set+1)+' / '+S.cfg.sets+' 组 · 目标 '+perSet()+' 下';
+  $('wBeatNum').textContent='0';W.beatN=0;
+  $('wDots').innerHTML=Array.from({length:S.cfg.sets},function(_,i){return '<i class="'+(i<W.set?'done':(i===W.set?'now':''))+'"></i>';}).join('');
+  setFoot('<button class="btn btn-danger" id="wStop">疼痛/不适，立即停止</button><button class="btn btn-primary" id="wNext">完成本组</button>');bindFoot();
+  clearTimers();
+  var period=60000/S.cfg.bpm;
+  var tick=function(){
+    if(W.paused)return;
+    W.beatN++;$('wBeatNum').textContent=W.beatN;
+    var el=$('wBeat');el.classList.add('pulse');setTimeout(function(){el.classList.remove('pulse');},95);
+    beep(880,.045,.07);vib(18);
+    if(W.beatN>=perSet()){vib([80,60,80]);}
+  };
+  tick();W.beat=setInterval(tick,period);
+}
+function startRest(){
+  showPart('wRest');W.stage='rest';W.paused=false;W.left=S.cfg.rest;
+  $('wRestNum').textContent=fmt(W.left);
+  setFoot('<button class="btn btn-ghost" id="wSkip">跳过休息</button><button class="btn btn-primary" id="wNext">继续下一组</button>');bindFoot();
+  clearTimers();W.timer=setInterval(function(){
+    if(W.paused)return;
+    W.left--;$('wRestNum').textContent=fmt(W.left);
+    if(W.left<=0){clearTimers();chime();vib([100,80,100]);nextStage();}
+  },1000);
+}
+function toBeat(){startBeat();}
+function afterPrep(){
+  if(S.cfg.lower)startCountdown(S.cfg.posture*60,'膝胸卧位','膝盖跪床、胸口贴床、屁股抬高',function(){startCountdown(S.cfg.warm,'热身','原地踏步、转腰、活动脚踝膝盖',toBeat);});
+  else startCountdown(S.cfg.warm,'热身','原地踏步、转腰、活动脚踝膝盖',toBeat);
+}
+function nextStage(){
+  clearTimers();
+  if(W.stage==='prep'){afterPrep();}
+  else if(W.stage==='膝胸卧位'){startCountdown(S.cfg.warm,'热身','原地踏步、转腰、活动脚踝膝盖',toBeat);}
+  else if(W.stage==='等待 10 分钟'){afterPrep();}
+  else if(W.stage==='热身'){toBeat();}
+  else if(W.stage==='jump'){
+    W.set++;
+    if(W.set>=S.cfg.sets){startCountdown(S.cfg.cool,'慢走','不要马上坐下或躺下',function(){finish(false);});}
+    else startRest();
+  }
+  else if(W.stage==='rest'){toBeat();}
+  else if(W.stage==='慢走'){finish(false);}
+}
+function togglePause(){
+  W.paused=!W.paused;$('wPause').textContent=W.paused?'▶':'⏸';
+  toast(W.paused?'已暂停':'继续');
+}
+
+function finish(stopped){
+  clearTimers();releaseWake();$('workout').classList.remove('show');
+  W.total=stopped?Math.max(0,W.set*perSet()):S.cfg.sets*perSet();
+  var html='<div class="sub">本次记录：'+W.total+' 下 · '+(S.cfg.lower?'肾下盏模式 · ':'')+(S.cfg.adv?'进阶':'常规')+'</div>'+
+    '<label class="fld">小便观察（可多选）</label><div class="chips" id="mTags">'+
+    ['细沙粒','浑浊','血尿','腰酸不适'].map(function(t){return '<button class="chip" data-tag="'+t+'">'+t+'</button>';}).join('')+'</div>'+
+    '<label class="fld">备注</label><textarea id="mNote" placeholder="例如：跳完排出几粒细沙，无不适"></textarea>';
+  modal('完成打卡',html,function(){
+    var tags=[];document.querySelectorAll('#mTags .chip.on').forEach(function(c){tags.push(c.dataset.tag);});
+    if(tags.indexOf('血尿')>=0)toast('出现血尿，请暂停运动并尽快复诊');
+    S.logs.push({date:today(),ts:Date.now(),sets:stopped?W.set:S.cfg.sets,perSet:perSet(),total:W.total,adv:S.cfg.adv,lower:S.cfg.lower,tags:tags,note:($('mNote').value||'').trim(),done:!stopped});
+    save();W.active=false;render();
+    if(!stopped){chime();toast('打卡成功，共 '+W.total+' 下');}
+  },'保存打卡');
+  document.querySelectorAll('#mTags .chip').forEach(function(c){c.onclick=function(){c.classList.toggle('on');};});
+}
+
+$('btnStart').onclick=function(){
+  if(S.cfg.sets*perSet()>500){toast('超过500下上限，请调整组数或次数');return;}
+  W.active=true;W.stopped=false;W.set=0;W.beatN=0;W.paused=false;
+  $('workout').classList.add('show');
+  showPart('wPrep');$('wStageName').textContent='准备';
+  $('wPrepLabel').textContent='喝完温水，等 10 分钟';
+  W.stage='prep';clearTimers();
+  setFoot('<button class="btn btn-ghost" id="wWait10">开始10分钟等待</button><button class="btn btn-primary" id="wNext">已等待，开始</button>');bindFoot();
+  $('wWait10').onclick=function(){clearTimers();startCountdown(600,'等待 10 分钟','帮助冲刷，不要马上开跳',afterPrep);};
+  requestWake();
+};
+$('wExit').onclick=function(){
+  modal('退出运动','本次进度不会保存，确定退出？',function(){clearTimers();releaseWake();$('workout').classList.remove('show');W.active=false;},'退出');
+};
+$('wPause').onclick=togglePause;
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&W.active)requestWake();});
+
+/* 动态 manifest，便于添加到主屏幕 */
+try{
+  var mf={name:'跳绳排石打卡',short_name:'跳绳打卡',start_url:'.',scope:'.',display:'standalone',background_color:'#eef3f9',theme_color:'#2563eb',description:'跳绳排石运动节奏与打卡助手'};
+  var l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));document.head.appendChild(l);
+}catch(e){}
+
+load();fillCfg();render();
+})();
+</script>
+</body>
+</html>
